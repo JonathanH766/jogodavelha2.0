@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Velha Imbatível</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 5px;
+            justify-content: center;
+            margin: 20px auto;
+            width: 310px;
+            background-color: #444;
+            padding: 5px;
+            border-radius: 10px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            transition: background 0.3s ease;
+        }
+        .cell:hover {
+            background: #ddd;
+        }
+        .cell.taken {
+            cursor: not-allowed;
+            background: #ccc;
+        }
+        #status {
+            font-size: 20px;
+            margin: 10px;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quero ver tu ganhar esse KKKKKKKKKKKKKKKKKKKKKKKKK</h1>
+    <div class="board" id="board"></div>
+    <p id="status"></p>
+    <button onclick="resetGame()">Reiniciar</button>
+    
+    <script>
+        const boardElement = document.getElementById("board");
+        const statusElement = document.getElementById("status");
+        let board = Array(3).fill().map(() => Array(3).fill(" "));
+        let playerTurn = true;
+        
+        function createBoard() {
+            boardElement.innerHTML = "";
+            board.forEach((row, r) => {
+                row.forEach((cell, c) => {
+                    let div = document.createElement("div");
+                    div.classList.add("cell");
+                    if (cell !== " ") div.classList.add("taken");
+                    div.textContent = cell;
+                    div.addEventListener("click", () => {
+                        if (playerTurn) playerMove(r, c);
+                    });
+                    boardElement.appendChild(div);
+                });
+            });
+        }
+        
+        function checkWinner(player) {
+            return (
+                board.some(row => row.every(cell => cell === player)) ||
+                [0, 1, 2].some(col => board.every(row => row[col] === player)) ||
+                [0, 2].some(diag => board.every((row, i) => row[diag ? 2 - i : i] === player))
+            );
+        }
+        
+        function availableMoves() {
+            return board.flatMap((row, r) => row.map((cell, c) => (cell === " " ? [r, c] : null))).filter(Boolean);
+        }
+        
+        function minimax(isMaximizing) {
+            if (checkWinner("O")) return 10;
+            if (checkWinner("X")) return -10;
+            if (availableMoves().length === 0) return 0;
+            
+            let bestScore = isMaximizing ? -Infinity : Infinity;
+            availableMoves().forEach(([r, c]) => {
+                board[r][c] = isMaximizing ? "O" : "X";
+                let score = minimax(!isMaximizing);
+                board[r][c] = " ";
+                bestScore = isMaximizing ? Math.max(score, bestScore) : Math.min(score, bestScore);
+            });
+            return bestScore;
+        }
+        
+        function bestMove() {
+            let bestScore = -Infinity;
+            let move = null;
+            availableMoves().forEach(([r, c]) => {
+                board[r][c] = "O";
+                let score = minimax(false);
+                board[r][c] = " ";
+                if (score > bestScore) {
+                    bestScore = score;
+                    move = [r, c];
+                }
+            });
+            return move;
+        }
+        
+        function playerMove(r, c) {
+            if (!playerTurn || board[r][c] !== " " || statusElement.textContent) return;
+            board[r][c] = "X";
+            playerTurn = false;
+            createBoard();
+            if (checkWinner("X")) return (statusElement.textContent = "Você venceu! Mas isso não deveria acontecer...");
+            if (!availableMoves().length) return (statusElement.textContent = "Empate!");
+            setTimeout(() => {
+                let move = bestMove();
+                if (move) {
+                    let [br, bc] = move;
+                    board[br][bc] = "O";
+                    createBoard();
+                    if (checkWinner("O")) {
+                        statusElement.textContent = "A IA venceu!";
+                    }
+                }
+                playerTurn = true;
+            }, 500);
+        }
+        
+        function resetGame() {
+            board = Array(3).fill().map(() => Array(3).fill(" "));
+            statusElement.textContent = "";
+            playerTurn = true;
+            createBoard();
+        }
+        
+        createBoard();
+    </script>
+</body>
+</html>
