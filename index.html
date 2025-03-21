@@ -49,33 +49,36 @@
             margin: 10px;
             font-weight: bold;
         }
-        button {
-            padding: 10px 20px;
+        .scoreboard {
+            margin: 20px 0;
             font-size: 18px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
         }
-        button:hover {
-            background: #218838;
+        .scoreboard span {
+            margin: 0 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Quero ver tu ganhar esse KKKKKKKKKKKKKKKKKKKKKKKKK</h1>
+    <h1>Jogo da Velha Imbatível</h1>
+    <div class="scoreboard">
+        <span>Jogador X: <span id="scoreX">0</span></span>
+        <span>IA O: <span id="scoreO">0</span></span>
+    </div>
     <div class="board" id="board"></div>
     <p id="status"></p>
-    <button onclick="resetGame()">Reiniciar</button>
     
     <script>
         const boardElement = document.getElementById("board");
         const statusElement = document.getElementById("status");
+        const scoreXElement = document.getElementById("scoreX");
+        const scoreOElement = document.getElementById("scoreO");
+        
         let board = Array(3).fill().map(() => Array(3).fill(" "));
         let playerTurn = true;
-        
+        let scoreX = 0;
+        let scoreO = 0;
+        let isPlayerXStarting = true; // X começa a primeira rodada, IA começa na próxima
+
         function createBoard() {
             boardElement.innerHTML = "";
             board.forEach((row, r) => {
@@ -85,7 +88,7 @@
                     if (cell !== " ") div.classList.add("taken");
                     div.textContent = cell;
                     div.addEventListener("click", () => {
-                        if (playerTurn) playerMove(r, c);
+                        if (playerTurn && cell === " ") playerMove(r, c);
                     });
                     boardElement.appendChild(div);
                 });
@@ -139,27 +142,58 @@
             board[r][c] = "X";
             playerTurn = false;
             createBoard();
-            if (checkWinner("X")) return (statusElement.textContent = "Você venceu! Mas isso não deveria acontecer...");
-            if (!availableMoves().length) return (statusElement.textContent = "Empate!");
+            if (checkWinner("X")) return handleWin("X");
+            if (!availableMoves().length) return handleTie();
             setTimeout(() => {
                 let move = bestMove();
                 if (move) {
                     let [br, bc] = move;
                     board[br][bc] = "O";
                     createBoard();
-                    if (checkWinner("O")) {
-                        statusElement.textContent = "A IA venceu!";
-                    }
+                    if (checkWinner("O")) return handleWin("O");
                 }
                 playerTurn = true;
             }, 500);
         }
         
+        function handleWin(winner) {
+            if (winner === "X") {
+                scoreX++;
+                scoreXElement.textContent = scoreX;
+                statusElement.textContent = "Você venceu! Agora é a vez da IA.";
+            } else if (winner === "O") {
+                scoreO++;
+                scoreOElement.textContent = scoreO;
+                statusElement.textContent = "A IA venceu! Agora é a sua vez.";
+            }
+            setTimeout(resetGame, 1000);
+        }
+        
+        function handleTie() {
+            statusElement.textContent = "Empate! Agora é a vez da IA.";
+            setTimeout(resetGame, 1000);
+        }
+        
         function resetGame() {
             board = Array(3).fill().map(() => Array(3).fill(" "));
             statusElement.textContent = "";
-            playerTurn = true;
+            playerTurn = isPlayerXStarting; // Se o X começou antes, o X começa agora
             createBoard();
+            
+            // Se for a vez da IA começar
+            if (!playerTurn) {
+                let move = bestMove();
+                if (move) {
+                    let [br, bc] = move;
+                    board[br][bc] = "O";
+                    createBoard();
+                    if (checkWinner("O")) return handleWin("O");
+                }
+                playerTurn = true;
+            }
+
+            // Alterna quem começa
+            isPlayerXStarting = !isPlayerXStarting; // Alterna entre X e O
         }
         
         createBoard();
